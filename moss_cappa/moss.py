@@ -9,7 +9,7 @@ from urllib.request import urlopen
 class Moss:
 
     server = 'moss.stanford.edu'
-    port = 7691
+    port = 7690
 
     max_matches = 100
     num_of_files = 250

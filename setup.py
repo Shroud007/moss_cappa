@@ -9,7 +9,7 @@ except(IOError, ImportError):
 
 setup(
     name='moss_cappa',
-    version='0.1.2',
+    version='0.2.1',
     description='Python-клиент Moss, предназначенный для использования в комплексе автоматической проверки программ CAPPA',
     long_description=long_description,
     long_description_content_type='text/markdown',
