@@ -1,3 +1,3 @@
-from .main import Moss
+from .moss import Moss
 
-__version__ = "0.1.2"
+__version__ = "0.2"

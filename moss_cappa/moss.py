@@ -2,7 +2,6 @@ import os
 import re
 import glob
 import socket
-from moss_cappa import exceptions
 from bs4 import BeautifulSoup as BS
 from urllib.request import urlopen
 
@@ -10,7 +9,7 @@ from urllib.request import urlopen
 class Moss:
 
     server = 'moss.stanford.edu'
-    port = 7690
+    port = 7691
 
     max_matches = 100
     num_of_files = 250
@@ -49,12 +48,12 @@ class Moss:
 
         num = 1
 
-        sock = socket.socket()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
             sock.connect((self.server, self.port))
-        except (ConnectionRefusedError, OverflowError) as ex:
-            raise exceptions.ConnectionException(details=str(ex))
+        except (ConnectionRefusedError, OverflowError):
+            raise Exception(f'Error while connecting to Moss server: {self.server}:{self.port}')
 
         try:
             sock.send("moss {}\n".format(self.user_id).encode())
@@ -80,13 +79,13 @@ class Moss:
             sock.send(b"end\n")
             sock.close()
         except socket.error:
-            raise exceptions.SendingException()
+            raise Exception('Error while working with Moss server')
         else:
             return response.decode().replace("\n", "")
 
     # Получение результатов проверки
 
-    def get_value_from_moss_output(self, moss_output: str) -> float:
+    def get_value_from_moss_output(self, moss_output: str) -> int:
 
         try:
             percent_char_index = moss_output.find('%')
@@ -94,18 +93,18 @@ class Moss:
                 percent_char_index-4: percent_char_index
             ]
             str_value = re.findall(r'\b\d+\b', value_fragment)[-1]
-            result = int(str_value)/100
-        except (IndexError, ValueError) as ex:
-            raise exceptions.ParsingOutputException(details=str(ex))
+            result = int(str_value)
+        except (IndexError, ValueError):
+            raise Exception('Error while parsing a plagiarism value')
         else:
             return result
 
-    def process_url(self, url: str) -> float:
+    def process_url(self, url: str) -> int:
 
         try:
             response = urlopen(url)
         except ValueError:
-            raise exceptions.URLException()
+            raise Exception('Provided URL is broken or corrupted')
         else:
             html = response.read()
 
