@@ -24,6 +24,6 @@ result = m.process_url(url=moss_url)
 print(f'Plagiarism percentage: {result}')
 ```
 
-## Совместимость с версиями Python
+### Совместимость с версиями Python
 
 * [Python](http://www.python.com) - v3
