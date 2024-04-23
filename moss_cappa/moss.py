@@ -4,6 +4,7 @@ import glob
 import socket
 from bs4 import BeautifulSoup as BS
 from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 
 
 class Moss:
@@ -11,8 +12,8 @@ class Moss:
     server = 'moss.stanford.edu'
     port = 7690
 
-    max_matches = 100
-    num_of_files = 250
+    max_matches = 10
+    num_of_files = 65536
 
     def __init__(self, lang: str, user_id: int):
 
@@ -39,8 +40,17 @@ class Moss:
         encoded_msg = message.encode()
         sock.send(encoded_msg)
 
-        with open(file, "rb") as f:
-            sock.send(f.read(file_size))
+        try:
+            file_handle = open(file=file, mode='r', encoding='utf-8')
+        except FileNotFoundError:
+            raise Exception(f'File {display_name} not found')
+        except OSError:
+            raise Exception(f'OS error while opening file {display_name}')
+        else:
+            file_contents = file_handle.read()
+            file_handle.close()
+
+        sock.send(file_contents.encode())
 
         on_send(file, display_name)
 
@@ -52,10 +62,7 @@ class Moss:
 
         try:
             sock.connect((self.server, self.port))
-        except (ConnectionRefusedError, OverflowError):
-            raise Exception(f'Error while connecting to Moss server: {self.server}:{self.port}')
-
-        try:
+  
             sock.send("moss {}\n".format(self.user_id).encode())
             sock.send("maxmatches {}\n".format(self.max_matches).encode())
             sock.send("show {}\n".format(self.num_of_files).encode())
@@ -78,8 +85,14 @@ class Moss:
 
             sock.send(b"end\n")
             sock.close()
-        except socket.error:
-            raise Exception('Error while working with Moss server')
+        except OverflowError:
+            raise Exception(f'Wrong port provided: {self.port}')
+        except TimeoutError:
+            raise Exception('Timed out connecting to Moss server')
+        except ConnectionRefusedError:
+            raise Exception(
+                f'Error while connecting to Moss server: {self.server}:{self.port}'
+            )
         else:
             return response.decode().replace("\n", "")
 
@@ -103,8 +116,9 @@ class Moss:
 
         try:
             response = urlopen(url)
-        except ValueError:
-            raise Exception('Provided URL is broken or corrupted')
+        except (ValueError, HTTPError, URLError):
+            raise Exception(
+                f'Provided URL "{url}" is rather empty, broken or corrupted')
         else:
             html = response.read()
 
